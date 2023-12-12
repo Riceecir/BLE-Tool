@@ -1,7 +1,6 @@
 {
   "pages": [
-    "pages/index/index",
-    "pages/logs/logs"
+    "pages/index/index"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -12,5 +11,11 @@
   "sitemapLocation": "sitemap.json",
   "resolveAlias": {
     "~/*": "/*"
+  },
+  "usingComponents": {
+    "Icon": "./components/Icon/index",
+    "van-icon": "@vant/weapp/icon/index",
+    "van-dialog": "@vant/weapp/dialog/index",
+    "van-toast": "@vant/weapp/toast/index"
   }
 }

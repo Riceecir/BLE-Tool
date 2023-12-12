@@ -1,0 +1,126 @@
+
+/* No CSS *//*# sourceMappingURL=common.css.map */
+/* 常用的长度尺寸 */
+$sizeList: 0, 2, 4, 6, 8, 10, 12, 14, 16, 24, 32, 36, 48;
+
+/** 基础单位转换, 这里以2rpx(在 width: 375px 的设计稿下约等于 1px) 作为基础 */
+@function format ($size) {
+  @return $size * 2rpx;
+}
+
+/* margin and padding */
+@each $i in $sizeList {
+  $size: format($i);
+
+  /* font size */
+  .f-#{$i} {
+    font-size: $size;
+  }
+
+  /* margin */
+  .m-#{$i} {
+    margin: $size;
+  }
+
+  /* x轴、y轴 */
+  .m-x-#{$i} {
+    margin-left: $size;
+    margin-right: $size;
+  }
+  
+  .m-y-#{$i} {
+    margin-top: $size;
+    margin-bottom: $size;
+  }
+
+  .m-t-#{$i} {
+    margin-top: $size;
+  }
+
+  .m-b-#{$i} {
+    margin-bottom: $size;
+  }
+
+  .m-l-#{$i} {
+    margin-left: $size;
+  }
+
+  .m-r-#{$i} {
+    margin-right: $size;
+  }
+  
+  /* padding */
+  .p-#{$i} {
+    padding: $size
+  }
+
+  /* x轴、y轴 */
+  .p-x-#{$i} {
+    padding-left: $size;
+    padding-right: $size;
+  }
+
+  .p-y-#{$i} {
+    padding-top: $size;
+    padding-bottom: $size;
+  }
+
+  .p-t-#{$i} {
+    padding-top: $size;
+  }
+
+  .p-b-#{$i} {
+    padding-bottom: $size;
+  }
+
+  .p-l-#{$i} {
+    padding-left: $size;
+  }
+
+  .p-r-#{$i} {
+    padding-right: $size;
+  }
+}
+
+/*
+  flex 布局
+  .d-flex: flex 布局
+  .d-flex-column: 纵向 flex
+  .d-flex-row: 横向 flex
+
+  .flex-1: 不多解释
+ */
+.d-flex {
+  display: flex;
+}
+
+.d-flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.d-flex-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+/*
+  box
+  .fill: 宽高铺满！
+  .fill-w: 宽度铺满父容器
+  .fill-h: 高度铺满父容器
+ */
+.fill-w {
+  width: 100%;
+}
+.fill-h {
+  height: 100%;
+}
+.fill {
+  @extend .fill-w;
+  @extend .fill-h;
+}

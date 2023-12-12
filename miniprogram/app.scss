@@ -1,10 +1,26 @@
+@import './assets/styles/iconfont.scss';
+@import './assets/styles/vant.scss';
+/** ⚠⚠
+ * common.scss一定要放在 iconfont.scss后面
+ * 因为 format 函数有冲突,顺序错了会导致 iconfont 加载失败
+ */
+@import './assets/styles/common.scss';
+@import './assets/styles/reset.scss';
+
 /**app.wxss**/
 .container {
+  position: relative;
+  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 200rpx 0;
   box-sizing: border-box;
-} 
+  overflow: auto;
+}
+
+page {
+  width: 100%;
+  height: 100%;
+  font-size: 32rpx;
+  overflow: auto;
+}

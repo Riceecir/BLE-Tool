@@ -1,0 +1,13 @@
+<wxs module="i">
+  // 补全图标 class name
+  var completedIcon = function (name) {
+    if (getRegExp('icon-').test(name)) return name
+    else return 'icon-' + name
+  }
+  module.exports.completedIcon = completedIcon;
+</wxs>
+
+<i
+  class="iconfont {{i.completedIcon(icon)}}"
+  style="font-size: {{size}}; color: {{color}};"
+/>

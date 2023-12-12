@@ -1,0 +1,13 @@
+/* vant weapp 重置样式 */
+page {
+  --info-color: #4025db;
+  --button-info-background-color: #4025db;
+  --button-border-radius: 8rpx;
+  --tabs-default-color: #4025db;
+}
+
+.van-toast {
+  .van-icon {
+    font-size: 96rpx;
+  }
+}
