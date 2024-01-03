@@ -7,13 +7,13 @@ Page({
   },
 
   onHide() {
-    this.clearAnimation('#icon');
+    this.clearAnimation("#icon");
   },
 
   /* 开启动画 */
   openAnimate() {
     this.animate(
-      '#icon',
+      "#icon",
       [{ rotate: 0 }, { rotate: 360 }],
       5000,
       this.openAnimate
@@ -23,7 +23,7 @@ Page({
   /* 授权 */
   authorize(cb: () => void) {
     wx.authorize({
-      scope: 'scope.bluetooth',
+      scope: "scope.bluetooth",
       success: (res) => {
         console.log(res);
         cb();

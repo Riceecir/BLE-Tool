@@ -3,5 +3,6 @@
   "projectname": "BLE-Tool",
   "setting": {
     "compileHotReLoad": true
-  }
+  },
+  "libVersion": "3.2.5"
 }
