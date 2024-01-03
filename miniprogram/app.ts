@@ -1,5 +1,3 @@
-import { Middleware } from "~/plugins/Middleware/index";
-console.log(Middleware);
 // app.ts
 App<IAppOption>({
   globalData: {},

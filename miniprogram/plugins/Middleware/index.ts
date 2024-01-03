@@ -38,23 +38,27 @@ class Middleware<C = {}> {
   }
 
   /** 运行 */
-  private async runner(idx: number): Promise<C> {
-    if (this.prevIndex === -2) return this.ctx;
-    if (this.prevIndex === idx) throw new Error("不可以重复调用next!");
+  private runner(idx: number): Promise<C> {
+    return new Promise(async (resolve, reject) => {
+      if (this.prevIndex === -2) return resolve(this.ctx);
+      if (this.prevIndex === idx) throw new Error("不可以重复调用next!");
 
-    const middleware = this.queue[idx];
-    console.log("middleware: ", middleware);
-    if (!middleware) return this.ctx;
-    if (typeof middleware !== "function") throw new Error("请传入Function");
-    try {
-      this.prevIndex = idx;
-      await middleware(this.ctx, async () => {
-        return await this.runner(this.prevIndex + 1);
-      });
-    } catch (e) {
-      console.log("执行中断: ", e || "抛出错误");
-    }
-    return this.ctx;
+      const middleware = this.queue[idx];
+      if (!middleware) return resolve(this.ctx);
+      if (typeof middleware !== "function") throw new Error("请传入Function");
+      try {
+        this.prevIndex = idx;
+        const result = await middleware(this.ctx, async () => {
+          if (result === undefined) await this.runner(this.prevIndex + 1);
+          resolve(this.ctx);
+        });
+
+        if (result !== undefined) resolve(result);
+      } catch (e) {
+        console.log("执行中断: ", e || "抛出错误");
+        reject(e);
+      }
+    });
   }
 
   /* 清空队列 */
@@ -66,33 +70,3 @@ class Middleware<C = {}> {
 
 export { Middleware };
 export default new Middleware();
-
-type Ctx = {
-  value: number;
-};
-const middleware = new Middleware<Ctx>();
-middleware.use((ctx, next) => {
-  ctx.value += 1;
-  console.log(ctx.value);
-  next();
-});
-middleware.use((ctx, next) => {
-  ctx.value += 1;
-  console.log(ctx.value);
-  // return Promise.reject();
-  next();
-});
-middleware.use((ctx, next) => {
-  ctx.value += 1;
-  console.log(ctx.value);
-  next();
-});
-middleware.use((ctx, next) => {
-  ctx.value += 1;
-  console.log(ctx.value);
-  next();
-});
-
-middleware.start({ value: 0 }).then((result) => {
-  console.log(result); // 4
-});
