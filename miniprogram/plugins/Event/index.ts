@@ -1,4 +1,4 @@
-import { Names, EventCollect, CustomParameters } from "./type";
+import { Names, EventCollect, CustomParameters } from './type';
 
 /** 事件处理(发布订阅模式)
  * 实例化对象时，事件名称以及事件处理回调函数类型可以以键值对方式传入泛型
@@ -40,9 +40,9 @@ class Event<T = {}> {
    */
   emit<U extends Names<T>>(name: U, ...prop: CustomParameters<T[U]>) {
     for (const list of [this.events[name], this.onceEvents[name]]) {
-      list.forEach(({ callback }) => {
+      list?.forEach((i) => {
         try {
-          typeof callback === "function" && callback(prop);
+          typeof i.callback === 'function' && i.callback(...prop);
         } catch (e) {
           console.error(`事件处理出错${e}`);
         }
@@ -62,6 +62,7 @@ class Event<T = {}> {
     if (!name || !cb) return;
 
     for (let list of [this.events[name], this.onceEvents[name]]) {
+      if (!list) break;
       const idx = list.findIndex(({ callback }) => callback === cb);
       if (idx !== -1) {
         list.splice(idx, 1);
