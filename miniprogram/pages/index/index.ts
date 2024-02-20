@@ -33,9 +33,9 @@ Page({
 
   toMain() {
     this.authorize(() => {
-      /* wx.navigateTo({
+      wx.navigateTo({
         url: '/pages/devices/index',
-      }); */
+      });
     });
   },
 });

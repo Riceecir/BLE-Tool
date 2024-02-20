@@ -1,0 +1,25 @@
+<view class="container">
+  <block wx:if="{{ devices.length === 0 }}">
+    <view class="no-device">附近无设备</view>
+  </block>
+  <van-cell-group wx:else>
+    <block wx:for="{{ devices }}" wx:key="deviceId">
+      <van-cell
+        is-link
+        data-device="{{ item }}"
+        title="{{item.name || 'unknow'}}"
+        label="{{ item.deviceId }}"
+        bind:tap="connect"
+        link-type="navigateTo"
+      />
+    </block>
+  </van-cell-group>
+
+  <block wx:if="{{reInit}}">
+    <view class="re-init">
+      <van-button wx:if="{{system === 'android'}}" class="p-r-8" type="info">打开蓝牙</van-button>
+      <van-button class="flex-1" block type="info" bind:click="init">重新初始化</van-button>
+    </view>
+  </block>
+</view>
+<van-toast id="van-toast" />

@@ -1,7 +1,14 @@
 import { Event } from "~/plugins/Event/index";
+import { Middleware } from "~/plugins/Middleware/index";
+
+// 发送和接收拦截器
+const interceptors = {
+  send: new Middleware<{ value: string }>(),
+  receive: new Middleware<{ value: string }>(),
+};
 
 /* 蓝牙通讯基类，只处理基本的开启、关闭蓝牙，设备搜索，设备连接 */
-class BLE extends Event {
+class BLE extends Event<BLE.Events> {
   // 设备ID(connecting)
   protected deviceId: string = "";
   // 服务ID(connecting)
@@ -13,6 +20,35 @@ class BLE extends Event {
   protected characteristics: WechatMiniprogram.BLECharacteristic[] = [];
   constructor() {
     super();
+  }
+
+  // 拦截器注册函数
+  interceptors: {
+    send: { use: typeof interceptors.send.use };
+    receive: { use: typeof interceptors.send.use };
+  } = {
+    send: {
+      use(cb) {
+        return interceptors.send.use(cb);
+      },
+    },
+    receive: {
+      use(cb) {
+        return interceptors.send.use(cb);
+      },
+    },
+  };
+
+  /* 初始化蓝牙连接器 */
+  async init() {
+    try {
+      await this.openBluetoothAdapter();
+      await this.startBluetoothDevicesDiscovery();
+
+      return true;
+    } catch (e) {
+      return Promise.reject(e);
+    }
   }
 
   /* 授权 */
@@ -53,12 +89,68 @@ class BLE extends Event {
       wx.startBluetoothDevicesDiscovery({
         allowDuplicatesKey: true,
         success: (res) => {
+          wx.onBluetoothDeviceFound((res) => {
+            this.emit("device", res.devices);
+          });
           resolve(res);
         },
         fail: (err) => {
           reject(`开启搜索设备出错：${err.errCode}:${err.errMsg}`);
         },
         ...options,
+      });
+    });
+  }
+
+  // 连接设备
+  connect(deviceId: string) {
+    return new Promise(async (resolve, reject) => {
+      wx.createBLEConnection({
+        deviceId,
+        success: (res) => {
+          if (res.errCode === 0) {
+            this.deviceId = deviceId;
+            this.emit("connected", res);
+            resolve(res);
+          }
+        },
+        fail: (err) => {
+          reject(err.errMsg);
+        },
+      });
+    });
+  }
+
+  // 获取所有service
+  getServices(deviceId: string) {
+    return new Promise((resolve, reject) => {
+      wx.getBLEDeviceServices({
+        deviceId,
+        success: (res) => {
+          this.emit("service", res.services || []);
+          resolve(res.services || []);
+        },
+        fail: (err) => {
+          reject(err.errMsg);
+        },
+      });
+    });
+  }
+
+  /* 获取所有特征值  */
+  async getChrs(serviceId: string) {
+    return new Promise((resolve, reject) => {
+      wx.getBLEDeviceCharacteristics({
+        deviceId: this.deviceId,
+        serviceId,
+        success: (res) => {
+          this.serviceId = serviceId;
+          this.emit("chr", res.characteristics);
+          resolve(res.characteristics);
+        },
+        fail: (err) => {
+          reject(err.errMsg);
+        },
       });
     });
   }

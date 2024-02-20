@@ -1,11 +1,10 @@
-<!--index.wxml-->
+<!-- index.wxml -->
 <view class="container" bind:tap="toMain">
   <!-- <text class="f-48">Jimi Iot Lab</text> -->
   <text class="p-t-28 f-24">Bluetooth Low Energy Tool</text>
   <view class="m-t-24 icon-wrap">
     <Icon icon="shezhi" size="400rpx" id="icon" />
     <Icon icon="lanya" size="128rpx" class="ble" />
-
     <van-icon class-prefix="iconfont icon-" name="lanya" size="128rpx" />
   </view>
 </view>
