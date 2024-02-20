@@ -44,12 +44,14 @@ const mockData = [
 // pages/devices/index.ts
 Page<
   {
-    devices: BLE.BlueToothDevices;
     system: string;
+    devices: BLE.BlueToothDevices;
+    isConnecting: boolean;
   },
   {
     getDevices: (res: BLE.BlueToothDevices) => void;
-    init: () => void;
+    start: () => void;
+    stop: () => void;
     connect: (
       event: WechatMiniprogram.BaseEvent<{}, { deviceid: string }>
     ) => void;
@@ -59,12 +61,13 @@ Page<
    * 页面的初始数据
    */
   data: {
+    system: '',
+    isConnecting: false,
     devices: ['develop'].includes(
       wx.getAccountInfoSync().miniProgram.envVersion
     )
       ? mockData
       : [],
-    system: '',
   },
 
   onReady() {
@@ -80,25 +83,35 @@ Page<
    * 生命周期函数--监听页面加载
    */
   onShow() {
-    this.init();
+    this.start();
   },
 
-  // 初始化
-  async init() {
+  onHide() {
+    this.stop();
+  },
+
+  // 启动！
+  async start() {
     Toast.loading({
       message: 'loading...',
       duration: 0,
     });
+    ble.remove('device', this.getDevices);
+    ble.on('device', this.getDevices);
     this.setData({ reInit: false });
     try {
-      ble.remove('device', this.getDevices);
-      ble.on('device', this.getDevices);
-      await ble.init();
+      await ble.start();
       Toast.clear();
     } catch (e) {
       this.setData({ reInit: true });
-      Toast.fail({ message: e as string, duration: 3000 });
+      Toast({ message: e as string, duration: 3000 });
     }
+  },
+
+  // 关闭搜索
+  stop() {
+    ble.stop();
+    ble.remove('device', this.getDevices);
   },
 
   // 接收设备信息
@@ -121,6 +134,8 @@ Page<
 
   // 连接设备
   connect(e: WechatMiniprogram.BaseEvent) {
+    if (this.data.isConnecting) return;
+    this.data.isConnecting = true;
     const device = e.currentTarget.dataset?.device;
     if (!device) return;
     Toast.loading({
@@ -138,7 +153,8 @@ Page<
         });
       })
       .catch((e) => {
-        Toast.fail(e);
-      });
+        Toast(e);
+      })
+      .finally(() => (this.data.isConnecting = false));
   },
 });

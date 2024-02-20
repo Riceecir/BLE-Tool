@@ -1,5 +1,5 @@
-import { Event } from "~/plugins/Event/index";
-import { Middleware } from "~/plugins/Middleware/index";
+import { Event } from '~/plugins/Event/index';
+import { Middleware } from '~/plugins/Middleware/index';
 
 // 发送和接收拦截器
 const interceptors = {
@@ -10,9 +10,9 @@ const interceptors = {
 /* 蓝牙通讯基类，只处理基本的开启、关闭蓝牙，设备搜索，设备连接 */
 class BLE extends Event<BLE.Events> {
   // 设备ID(connecting)
-  protected deviceId: string = "";
+  protected deviceId: string = '';
   // 服务ID(connecting)
-  protected serviceId: string = "";
+  protected serviceId: string = '';
 
   // 设备、服务、特征值列表
   protected devices: WechatMiniprogram.BlueToothDevice[] = [];
@@ -40,7 +40,7 @@ class BLE extends Event<BLE.Events> {
   };
 
   /* 初始化蓝牙连接器 */
-  async init() {
+  async start() {
     try {
       await this.openBluetoothAdapter();
       await this.startBluetoothDevicesDiscovery();
@@ -60,7 +60,7 @@ class BLE extends Event<BLE.Events> {
   > {
     return new Promise((resolve, reject) => {
       wx.openBluetoothAdapter({
-        mode: "central",
+        mode: 'central',
         success: resolve,
         fail: (err) => {
           reject(`初始化失败: 请开启蓝牙后重试; ${err.errCode}:${err.errMsg};`);
@@ -90,7 +90,7 @@ class BLE extends Event<BLE.Events> {
         allowDuplicatesKey: true,
         success: (res) => {
           wx.onBluetoothDeviceFound((res) => {
-            this.emit("device", res.devices);
+            this.emit('device', res.devices);
           });
           resolve(res);
         },
@@ -98,6 +98,18 @@ class BLE extends Event<BLE.Events> {
           reject(`开启搜索设备出错：${err.errCode}:${err.errMsg}`);
         },
         ...options,
+      });
+    });
+  }
+
+  /* 关闭蓝牙设备搜索 */
+  stop() {
+    return new Promise((resolve, reject) => {
+      wx.stopBluetoothDevicesDiscovery({
+        success: resolve,
+        fail: (err) => {
+          reject(`停止搜索设备出错: ${err.errCode}:${err.errMsg}`);
+        },
       });
     });
   }
@@ -110,7 +122,7 @@ class BLE extends Event<BLE.Events> {
         success: (res) => {
           if (res.errCode === 0) {
             this.deviceId = deviceId;
-            this.emit("connected", res);
+            this.emit('connected', res);
             resolve(res);
           }
         },
@@ -127,7 +139,7 @@ class BLE extends Event<BLE.Events> {
       wx.getBLEDeviceServices({
         deviceId,
         success: (res) => {
-          this.emit("service", res.services || []);
+          this.emit('service', res.services || []);
           resolve(res.services || []);
         },
         fail: (err) => {
@@ -145,7 +157,7 @@ class BLE extends Event<BLE.Events> {
         serviceId,
         success: (res) => {
           this.serviceId = serviceId;
-          this.emit("chr", res.characteristics);
+          this.emit('chr', res.characteristics);
           resolve(res.characteristics);
         },
         fail: (err) => {
