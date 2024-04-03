@@ -1,0 +1,23 @@
+<van-cell
+  wx:for="{{list}}"
+  wx:for-index="serviceId"
+  wx:for-item="chrs"
+  title="{{serviceId}}"
+  custom-class="block"
+  use-label-slot
+  border="{{ false }}"
+>
+  <van-cell-group slot="label" inset>
+    <van-cell
+      wx:for="{{chrs}}"
+      wx:for-index="idx"
+      is-link
+      url="/pages/command/index?chrs={{item.uuid}}&properties={{item.properties}}"
+    >
+      <view slot="title" class="chr">
+        <text>{{item.uuid}}</text>
+        <text>{{item.properties}}</text>
+      </view>
+    </van-cell>
+  </van-cell-group>
+</van-cell>
