@@ -1,4 +1,4 @@
-type Callback<C> = (ctx: C, next: () => void) => any;
+type Callback<C> = (ctx: C, next: () => void) => C;
 /** 中间件模式
  *
  * @function use 注册中间件
