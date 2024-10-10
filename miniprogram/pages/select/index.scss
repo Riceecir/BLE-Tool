@@ -6,4 +6,14 @@
 .chr {
   display: flex;
   flex-direction: column;
+
+  .properties {
+    display: inline-block;
+    color: #666;
+
+    .property {
+      display: inline-block;
+      padding-right: 1em;
+    }
+  }
 }

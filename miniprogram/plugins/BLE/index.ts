@@ -26,6 +26,9 @@ class BLE extends Event<BLE.Events> {
   protected serviceId: string = "";
   // 特征值ID(connecting)
   protected characteristicId: string = "";
+  // 特征值支持的操作类型
+  protected properties: (keyof WechatMiniprogram.BLECharacteristicProperties)[] =
+    [];
 
   // 设备、服务、特征值列表
   protected devices: WechatMiniprogram.BlueToothDevice[] = [];
@@ -212,9 +215,13 @@ class BLE extends Event<BLE.Events> {
     });
   }
 
-  /* 设置特征值, 并监听notify */
-  setChrs(characteristicId: string) {
+  /* 设置特征值 */
+  setChrs(
+    characteristicId: string,
+    properties: (keyof WechatMiniprogram.BLECharacteristicProperties)[]
+  ) {
     this.characteristicId = characteristicId;
+    this.properties = properties;
   }
 
   /* 写入 */

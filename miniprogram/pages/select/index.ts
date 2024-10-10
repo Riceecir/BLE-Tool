@@ -1,9 +1,10 @@
-import ble from '~/plugins/BLE/index';
+import ble from "~/plugins/BLE/index";
+import Toast from "../../miniprogram_npm/@vant/weapp/toast/toast";
 
 type List = {
   [key: string]: {
     uuid: string;
-    properties: keyof WechatMiniprogram.BLECharacteristicProperties;
+    properties: (keyof WechatMiniprogram.BLECharacteristicProperties)[];
   }[];
 };
 
@@ -14,6 +15,18 @@ Page<
   },
   {
     query: (deviceId: string) => void;
+    to: (
+      event: WechatMiniprogram.BaseEvent<
+        {},
+        {
+          info: {
+            serviceId: string;
+            characteristicId: string;
+            properties: (keyof WechatMiniprogram.BLECharacteristicProperties)[];
+          };
+        }
+      >
+    ) => void;
   }
 >({
   /**
@@ -32,6 +45,10 @@ Page<
 
   // 查询 service 和 chr
   async query(deviceId) {
+    Toast.loading({
+      message: "loading...",
+      duration: 0,
+    });
     const list: List = {};
     try {
       const services = await ble.getServices(deviceId);
@@ -40,21 +57,43 @@ Page<
         if (!list[uuid]) list[uuid] = [];
 
         ble.getChrs(uuid).then((chrs) => {
-          chrs.forEach((chr) => {
-            for (let i in chr.properties) {
-              // @ts-ignore
-              if (chr.properties[i])
-                list[uuid].push({
-                  uuid: chr.uuid,
-                  properties:
-                    i as keyof WechatMiniprogram.BLECharacteristicProperties,
-                });
-            }
+          chrs.forEach((chr, idx) => {
+            const properties: (keyof WechatMiniprogram.BLECharacteristicProperties)[] =
+              [];
 
-            this.setData({ list });
+            Object.entries(chr.properties).forEach(([key, value]) => {
+              // @ts-ignore
+              if (value) properties.push(key);
+            });
+
+            list[uuid].push({
+              ...chr,
+              properties,
+            });
+
+            // 结束
+            if (idx === chrs.length - 1) {
+              this.setData({ list });
+            }
           });
         });
       });
-    } catch (e) {}
+    } catch (e) {
+    } finally {
+      Toast.clear();
+    }
+  },
+
+  // 跳转界面
+  to(e) {
+    console.log(e);
+    const { serviceId, characteristicId, properties } =
+      e.currentTarget.dataset.info;
+    if (!serviceId || !characteristicId || !properties) return;
+
+    ble.setChrs(characteristicId, properties);
+    wx.navigateTo({
+      url: `/pages/command/index`,
+    });
   },
 });
