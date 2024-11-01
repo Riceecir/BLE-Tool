@@ -173,6 +173,7 @@ class BLE extends Event<BLE.Events> {
           this.deviceId = "";
           this.serviceId = "";
           this.characteristicId = "";
+          this.properties = [];
           this.services = [];
           this.characteristics = [];
           this.emit("chr", this.characteristics);
