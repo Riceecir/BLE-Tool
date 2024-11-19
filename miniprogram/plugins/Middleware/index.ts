@@ -62,9 +62,14 @@ class Middleware<C = {}> {
   }
 
   /* 清空队列 */
-  clear(idx?: number) {
-    if (idx && typeof idx === "number") this.queue.splice(0, idx);
-    this.queue.splice(0, this.queue.length);
+  clear(fn?: Function) {
+    if (typeof fn !== "function") {
+      console.log("传入参数有误");
+    } else {
+      const idx = this.queue.findIndex((i) => i === fn);
+      if (idx !== -1) this.queue.splice(0, idx);
+      else this.queue.splice(0, this.queue.length);
+    }
   }
 }
 

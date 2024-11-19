@@ -1,12 +1,13 @@
 import { Event } from "~/plugins/Event/index";
 import { Middleware } from "~/plugins/Middleware/index";
-import { strToAb, hexToAb, abTostr } from "~/utils/String";
+import { strToAb, hexToAb, abTostr, abTohex } from "~/utils/String";
 
 // 传递给middleware的上下文类型
 type Context = {
-  type?: "HEX" | "String";
-  value?: string;
-  ab?: ArrayBuffer;
+  type?: "HEX" | "String"; // 写入内容格式类型
+  value?: string; // 明文内容
+  hex?: string; // 十六进制内容
+  ab?: ArrayBuffer; // arraybuffer 数据
   deviceId?: WechatMiniprogram.BlueToothDevice["deviceId"];
   serviceId?: WechatMiniprogram.BLEService["uuid"];
   characteristicId?: WechatMiniprogram.BLECharacteristic["uuid"];
@@ -232,7 +233,7 @@ class BLE extends Event<BLE.Events> {
     );
 
     if (!ab) {
-      this.emit("notify", "error", "写入数据格式错误");
+      this.emit("notify", "error", { text: "写入数据格式错误" });
       return Promise.reject();
     }
 
@@ -244,11 +245,9 @@ class BLE extends Event<BLE.Events> {
       success: () => {},
       fail: (e) => {
         this.emit("error", e);
-        this.emit(
-          "notify",
-          "error",
-          `错误码: ${e.errCode}; 错误信息: ${e.errMsg}`
-        );
+        this.emit("notify", "error", {
+          text: `错误码: ${e.errCode}; 错误信息: ${e.errMsg}`,
+        });
       },
     });
   }
@@ -261,11 +260,9 @@ class BLE extends Event<BLE.Events> {
       success: () => {},
       fail: (e) => {
         this.emit("error", e);
-        this.emit(
-          "notify",
-          "error",
-          `错误码: ${e.errCode}; 错误信息: ${e.errMsg}`
-        );
+        this.emit("notify", "error", {
+          text: `错误码: ${e.errCode}; 错误信息: ${e.errMsg}`,
+        });
       },
     });
   }
@@ -273,10 +270,12 @@ class BLE extends Event<BLE.Events> {
   notify() {
     this.closeNotify();
     wx.onBLECharacteristicValueChange(async (res) => {
-      const { value } = await interceptors.receive.start(
-        this.getContext({ ab: res.value })
-      );
-      this.emit("notify", "message", value || "", res);
+      const {
+        value: text,
+        hex,
+        type,
+      } = await interceptors.receive.start(this.getContext({ ab: res.value }));
+      this.emit("notify", "message", { text, hex, type }, res);
     });
   }
 
@@ -288,7 +287,7 @@ class BLE extends Event<BLE.Events> {
 
 const ble = new BLE();
 
-// 注册中间件(发送)
+// 注册中间件(写入)
 ble.interceptors.send.use((ctx) => {
   // 类型转换
   let ab: ArrayBuffer | undefined = undefined;
@@ -309,6 +308,7 @@ ble.interceptors.receive.use((ctx) => {
   } else {
     // 类型转换
     ctx.value = abTostr(ctx.ab);
+    ctx.hex = abTohex(ctx.ab);
   }
   return ctx;
 });

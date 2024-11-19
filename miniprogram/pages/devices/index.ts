@@ -1,5 +1,5 @@
-import ble from '~/plugins/BLE/index';
-import Toast from '../../miniprogram_npm/@vant/weapp/toast/toast';
+import ble from "~/plugins/BLE/index";
+import Toast from "../../miniprogram_npm/@vant/weapp/toast/toast";
 
 // 模拟蓝牙设备
 // const mockData = [
@@ -44,6 +44,7 @@ import Toast from '../../miniprogram_npm/@vant/weapp/toast/toast';
 // pages/devices/index.ts
 Page<
   {
+    reInit: boolean;
     initializing: boolean;
     system: string;
     devices: BLE.BlueToothDevices;
@@ -54,10 +55,7 @@ Page<
     start: () => void;
     stop: () => void;
     connect: (
-      event: WechatMiniprogram.BaseEvent<
-        {},
-        { deviceid: string }
-      >
+      event: WechatMiniprogram.BaseEvent<{}, { deviceid: string }>
     ) => void;
   }
 >({
@@ -65,8 +63,9 @@ Page<
    * 页面的初始数据
    */
   data: {
+    reInit: false,
     initializing: true,
-    system: '',
+    system: "",
     isConnecting: false,
     devices: [],
   },
@@ -75,9 +74,7 @@ Page<
     const app = getApp();
     if (app) {
       this.setData({
-        system: String(
-          app.globalData.platform
-        ).toLocaleLowerCase(),
+        system: String(app.globalData.platform).toLocaleLowerCase(),
       });
     }
   },
@@ -96,11 +93,11 @@ Page<
   // 启动！
   async start() {
     Toast.loading({
-      message: 'loading...',
+      message: "loading...",
       duration: 0,
     });
-    ble.remove('device', this.getDevices);
-    ble.on('device', this.getDevices);
+    ble.remove("device", this.getDevices);
+    ble.on("device", this.getDevices);
     this.setData({ reInit: false });
     try {
       await ble.start();
@@ -116,7 +113,7 @@ Page<
   // 关闭搜索
   stop() {
     ble.stop();
-    ble.remove('device', this.getDevices);
+    ble.remove("device", this.getDevices);
   },
 
   // 接收设备信息
@@ -127,9 +124,7 @@ Page<
       // @ts-ignore
       if (!d.connectable) return;
       /* 替换重复设备 */
-      const idx = devices.findIndex(
-        ({ deviceId }) => deviceId === d.deviceId
-      );
+      const idx = devices.findIndex(({ deviceId }) => deviceId === d.deviceId);
       if (idx === -1) {
         devices.push(d);
       } else {
@@ -147,7 +142,7 @@ Page<
     if (this.data.isConnecting) return;
     this.data.isConnecting = true;
     Toast.loading({
-      message: 'connecting...',
+      message: "connecting...",
       duration: 0,
     });
     const device = e.currentTarget.dataset?.device;
