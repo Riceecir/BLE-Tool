@@ -4,8 +4,8 @@ import { strToAb, hexToAb, abTostr, abTohex } from "~/utils/String";
 
 // 传递给middleware的上下文类型
 type Context = {
-  type?: "HEX" | "String"; // 写入内容格式类型
-  value?: string; // 明文内容
+  type?: "HEX" | "TEXT"; // 写入内容格式类型
+  text?: string; // 明文内容
   hex?: string; // 十六进制内容
   ab?: ArrayBuffer; // arraybuffer 数据
   deviceId?: WechatMiniprogram.BlueToothDevice["deviceId"];
@@ -227,9 +227,9 @@ class BLE extends Event<BLE.Events> {
   }
 
   /* 写入 */
-  async write({ value, type }: { value: string; type: Context["type"] }) {
+  async write({ text, type }: { text: string; type: Context["type"] }) {
     const { ab } = await interceptors.send.start(
-      this.getContext({ value, type })
+      this.getContext({ text, type })
     );
 
     if (!ab) {
@@ -270,18 +270,26 @@ class BLE extends Event<BLE.Events> {
   notify() {
     this.closeNotify();
     wx.onBLECharacteristicValueChange(async (res) => {
-      const {
-        value: text,
-        hex,
-        type,
-      } = await interceptors.receive.start(this.getContext({ ab: res.value }));
-      this.emit("notify", "message", { text, hex, type }, res);
+      const { text, hex, type } = await interceptors.receive.start(
+        this.getContext({ ab: res.value })
+      );
+      this.emit("notify", "notify", { text, hex, type }, res);
     });
   }
 
   // 关闭监听notify
   closeNotify() {
     wx.offBLECharacteristicValueChange(() => {});
+  }
+
+  // 获取连接信息
+  getConnection() {
+    return {
+      deviceId: this.deviceId,
+      serviceId: this.serviceId,
+      characteristicId: this.characteristicId,
+      properties: this.properties,
+    };
   }
 }
 
@@ -291,10 +299,10 @@ const ble = new BLE();
 ble.interceptors.send.use((ctx) => {
   // 类型转换
   let ab: ArrayBuffer | undefined = undefined;
-  const { type, value } = ctx;
-  if (value) {
-    if (type === "HEX") ab = hexToAb(value);
-    else if (type === "String") ab = strToAb(value);
+  const { type, text } = ctx;
+  if (text) {
+    if (type === "HEX") ab = hexToAb(text);
+    else if (type === "TEXT") ab = strToAb(text);
   }
   ctx.ab = ab;
 
@@ -303,13 +311,9 @@ ble.interceptors.send.use((ctx) => {
 
 // 注册中间件(响应)
 ble.interceptors.receive.use((ctx) => {
-  if (!ctx.ab) {
-    ctx.value = "";
-  } else {
-    // 类型转换
-    ctx.value = abTostr(ctx.ab);
-    ctx.hex = abTohex(ctx.ab);
-  }
+  // 类型转换
+  ctx.text = ctx.ab ? abTostr(ctx.ab) : "";
+  ctx.hex = ctx.ab ? abTohex(ctx.ab) : "";
   return ctx;
 });
 

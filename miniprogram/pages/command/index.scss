@@ -1,1 +1,68 @@
 /* pages/comand/index.wxss */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+
+  /* 终端窗口 */
+  .scroll-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column-reverse;
+    box-sizing: border-box;
+    padding: 16rpx;
+    overflow: auto;
+  }
+
+  .terminal {
+    font-size: 28rpx;
+    
+    .message {
+      margin: .15em 0;
+      font-weight: bold;
+      word-break: break-all;
+    }
+
+    .write {
+      color: rgb(16, 173, 55);
+    }
+
+    .notify {
+      color: rgb(209, 117, 30);
+    }
+
+    .error {
+      color: rgb(228, 17, 10);
+    }
+  }
+
+  /* 操作栏 */
+
+  .command {
+    display: flex;
+    border-top: 1px solid var(--info-color);
+    padding: 16rpx;
+    padding-bottom: 64rpx;
+    background-color: #eee;
+    display: flex;
+    justify-content: space-between;
+    overflow: hidden;
+
+    textarea {
+      flex: 1;
+      max-height: 180rpx;
+      padding: 0.25em 0.5em;
+      border-radius: 8rpx;
+      background-color: #fff;
+    }
+    
+    .btns {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+      margin: 0 .5em;
+    }
+  }
+}

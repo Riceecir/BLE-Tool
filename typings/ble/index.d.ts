@@ -18,7 +18,7 @@ declare namespace BLE {
     connected: (p: WechatMiniprogram.BluetoothError) => void; //蓝牙连接状态
     disConnected: (p: WechatMiniprogram.BluetoothError) => void; //蓝牙断开连接
     notify: (
-      type: "message" | "error",
+      type: "notify" | "error",
       message: { text?: string; hex?: string; type?: string },
       p?: WechatMiniprogram.OnBLECharacteristicValueChangeCallbackResult
     ) => void; // notify 特征值变化
