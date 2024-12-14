@@ -1,0 +1,19 @@
+/* pages/select/index.wxss */
+.block {
+  margin-bottom: 1rem;
+}
+
+.chr {
+  display: flex;
+  flex-direction: column;
+
+  .properties {
+    display: inline-block;
+    color: #666;
+
+    .property {
+      display: inline-block;
+      padding-right: 1em;
+    }
+  }
+}

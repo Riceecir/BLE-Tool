@@ -1,0 +1,32 @@
+<wxs module="command">
+	var includes = function (list, value) {
+		return list.indexOf(value) !== -1
+  }
+  module.exports.includes = includes;
+</wxs>
+<view class="container">
+	<scroll-view class="scroll-view terminal" scroll-y enable-flex>
+		<block wx:for="{{ message }}" wx:key="index">
+			<view class="message {{ item.type }}">[{{ item.date }}] {{ item.text }}</view>
+		</block>
+	</scroll-view>
+	<view class="command">
+		<textarea
+			adjust-keyboard-to="bottom"
+			placeholder="{{ command.includes(properties, 'write') ? 'command' : '此设备暂不支持写入' }}"
+			value="{{ text }}"
+			disabled="{{ !command.includes(properties, 'write') }}"
+			bindinput="onInput"
+		/>
+		<view class="btns">
+			<picker mode="selector" value="{{ typeIdx }}" range="{{ types }}" bindchange="onChange">
+				<view style="padding: 0 8rpx">
+					<text>{{ types[typeIdx] }}</text>
+					<van-icon name="play" />
+				</view>
+			</picker>
+			<van-button type="default" size="small" disabled="{{ !command.includes(properties, 'read') }}" bind:click="read">READ</van-button>
+			<van-button type="info" size="small" disabled="{{ !command.includes(properties, 'write') }}" bind:click="write">SEND</van-button>
+		</view>
+	</view>
+</view>

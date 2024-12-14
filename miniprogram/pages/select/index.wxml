@@ -1,0 +1,41 @@
+<wxs module="select">
+	var joinObject = function (serviceId, uuid, properties) {
+    return {
+      serviceId: serviceId,
+      characteristicId: uuid,
+      properties: properties
+    }
+  }
+  module.exports = {
+    joinObject: joinObject
+  }
+</wxs>
+<van-cell
+	wx:for="{{ list }}"
+	wx:for-index="serviceId"
+	wx:for-item="chrs"
+	title="{{ serviceId }}"
+	custom-class="block"
+	use-label-slot
+	border="{{ false }}"
+>
+	<van-cell-group slot="label" inset>
+		<van-cell
+			wx:for="{{ chrs }}"
+			wx:for-index="idx"
+			is-link
+			data-info="{{ select.joinObject(serviceId, item.uuid, item.properties) }}"
+			bind:click="to"
+		>
+			<view slot="title" class="chr">
+				<text>{{item.uuid}}</text>
+				<view class="properties">
+					<block wx:for="{{ item.properties }}" wx:for-item="p">
+						<text class="property">{{p}}</text>
+					</block>
+				</view>
+			</view>
+		</van-cell>
+	</van-cell-group>
+</van-cell>
+<van-toast id="van-toast" />

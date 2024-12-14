@@ -1,11 +1,14 @@
 {
   "pages": [
-    "pages/index/index"
+    "pages/command/index",
+    "pages/index/index",
+    "pages/devices/index",
+    "pages/select/index"
   ],
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#fff",
-    "navigationBarTitleText": "Weixin",
+    "navigationBarTitleText": "BLE Tool",
     "navigationBarTextStyle": "black"
   },
   "sitemapLocation": "sitemap.json",

@@ -1,0 +1,118 @@
+import ble from "~/plugins/BLE/index";
+import dayjs from "dayjs/index";
+
+// pages/comand/index.ts
+Page<
+  {
+    properties: (keyof WechatMiniprogram.BLECharacteristicProperties)[];
+    types: ["TEXT", "HEX"];
+    typeIdx: number;
+    text: string;
+    message: {
+      text: string;
+      date: string;
+      type: "write" | "notify" | "error";
+    }[];
+  },
+  {
+    onInput(e: WechatMiniprogram.Input): void;
+    onChange(e: WechatMiniprogram.PickerChange): void;
+    onNotify: BLE.Events["notify"];
+    addRecord(type: "write" | "notify" | "error", text: string): void;
+    listen(): void;
+    write(): void;
+    read(): void;
+  }
+>({
+  /**
+   * 页面的初始数据
+   */
+  data: {
+    properties: [],
+    types: ["TEXT", "HEX"],
+    typeIdx: 0,
+    text: "",
+    message: [],
+  },
+
+  // 读取
+  read() {
+    if (!this.data.properties.includes("read")) {
+      this.addRecord("error", "该设备不支持读取");
+      return;
+    }
+    ble.read();
+  },
+
+  // 写入
+  write() {
+    if (!this.data.text || !this.data.properties.includes("write")) {
+      this.addRecord("error", "该设备不支持写入");
+      return;
+    }
+    ble
+      .write({
+        text: this.data.text,
+        type: this.data.types[this.data.typeIdx],
+      })
+      .finally(() => {
+        this.addRecord("write", this.data.text);
+        this.setData({ text: "" });
+      });
+  },
+
+  // 监听广播数据
+  listen() {
+    ble.on("notify", this.onNotify);
+  },
+
+  // 添加记录
+  addRecord(type, text) {
+    this.setData({
+      message: [
+        { type, date: dayjs().format("YYYY-MM-DD HH:mm:ss"), text },
+        ...this.data.message,
+      ],
+    });
+  },
+
+  onInput(e) {
+    this.setData({ text: e.detail.value });
+  },
+
+  //
+  onChange(e) {
+    console.log(e);
+    this.setData({
+      typeIdx: +e.detail.value,
+    });
+  },
+
+  // notify事件处理函数
+  onNotify(type, message) {
+    message.text && this.addRecord(type, message.text);
+    message.hex && this.addRecord(type, `HEX: ${message.hex}`);
+  },
+  /**
+   * 生命周期函数--监听页面加载
+   */
+  onLoad(e) {
+    const properties = ble.getConnection().properties || [];
+    this.setData({ properties });
+    if (this.data.properties.includes("notify")) this.listen();
+
+    this.addRecord("write", "写入");
+    this.addRecord("notify", "广播");
+    this.addRecord("notify", "HEX: 0F FF 00 00 00 00 0E");
+    this.addRecord("notify", "HEX: 0F FF 00 00 00 00 0E");
+    this.addRecord("notify", "HEX: 0F FF 00 00 00 00 0E");
+    this.addRecord("error", "错误");
+  },
+
+  /**
+   * 生命周期函数--监听页面卸载
+   */
+  onUnload() {
+    ble.remove("notify", this.onNotify);
+  },
+});
