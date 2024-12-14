@@ -24,4 +24,15 @@ declare namespace BLE {
     ) => void; // notify 特征值变化
     error<T = WechatMiniprogram.BluetoothError>(p?: T): void;
   };
+
+  // 传递给middleware的上下文类型
+  type Context = {
+    type?: "HEX" | "TEXT"; // 写入内容格式类型
+    text?: string; // 明文内容
+    hex?: string; // 十六进制内容
+    ab?: ArrayBuffer; // arraybuffer 数据
+    deviceId?: WechatMiniprogram.BlueToothDevice["deviceId"];
+    serviceId?: WechatMiniprogram.BLEService["uuid"];
+    characteristicId?: WechatMiniprogram.BLECharacteristic["uuid"];
+  };
 }

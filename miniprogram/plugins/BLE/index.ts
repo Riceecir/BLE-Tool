@@ -2,21 +2,10 @@ import { Event } from "~/plugins/Event/index";
 import { Middleware } from "~/plugins/Middleware/index";
 import { strToAb, hexToAb, abTostr, abTohex } from "~/utils/String";
 
-// 传递给middleware的上下文类型
-type Context = {
-  type?: "HEX" | "TEXT"; // 写入内容格式类型
-  text?: string; // 明文内容
-  hex?: string; // 十六进制内容
-  ab?: ArrayBuffer; // arraybuffer 数据
-  deviceId?: WechatMiniprogram.BlueToothDevice["deviceId"];
-  serviceId?: WechatMiniprogram.BLEService["uuid"];
-  characteristicId?: WechatMiniprogram.BLECharacteristic["uuid"];
-};
-
 // 发送和接收拦截器
 const interceptors = {
-  send: new Middleware<Context>(),
-  receive: new Middleware<Context>(),
+  send: new Middleware<BLE.Context>(),
+  receive: new Middleware<BLE.Context>(),
 };
 
 /* 蓝牙通讯基类，只处理基本的开启、关闭蓝牙，设备搜索，设备连接 */
@@ -57,7 +46,7 @@ class BLE extends Event<BLE.Events> {
   };
 
   /* 获取上下文(中间件使用) */
-  protected getContext(mixins: Context) {
+  protected getContext(mixins: BLE.Context) {
     return {
       deviceId: this.deviceId,
       serviceId: this.serviceId,
@@ -227,7 +216,7 @@ class BLE extends Event<BLE.Events> {
   }
 
   /* 写入 */
-  async write({ text, type }: { text: string; type: Context["type"] }) {
+  async write({ text, type }: { text: string; type: BLE.Context["type"] }) {
     const { ab } = await interceptors.send.start(
       this.getContext({ text, type })
     );

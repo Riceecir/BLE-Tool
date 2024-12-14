@@ -6,7 +6,7 @@ export type CallBack<T> = T[Names<T>];
  * 将传入的泛型转换成为事件列表
  * { change: (p: number) => void }
  * 转换为=>
- * { change: (:number) => void)[] }
+ * { change: (p: number) => void)[] }
  */
 export type EventCollect<T> = {
   [key in Names<T>]: { callback: CallBack<T> }[];
