@@ -1,21 +1,15 @@
-import { Event } from "~/plugins/Event/index";
-import { Middleware } from "~/plugins/Middleware/index";
-import { strToAb, hexToAb, abTostr, abTohex } from "~/utils/String";
-
-// 发送和接收拦截器
-const interceptors = {
-  send: new Middleware<BLE.Context>(),
-  receive: new Middleware<BLE.Context>(),
-};
+import { Event } from '~/plugins/Event/index';
+import { Middleware } from '~/plugins/Middleware/index';
+import { strToAb, hexToAb, abTostr, abTohex } from '~/utils/String';
 
 /* 蓝牙通讯基类，只处理基本的开启、关闭蓝牙，设备搜索，设备连接 */
 class BLE extends Event<BLE.Events> {
   // 设备ID(connecting)
-  protected deviceId: string = "";
+  protected deviceId: string = '';
   // 服务ID(connecting)
-  protected serviceId: string = "";
+  protected serviceId: string = '';
   // 特征值ID(connecting)
-  protected characteristicId: string = "";
+  protected characteristicId: string = '';
   // 特征值支持的操作类型
   protected properties: (keyof WechatMiniprogram.BLECharacteristicProperties)[] =
     [];
@@ -28,21 +22,13 @@ class BLE extends Event<BLE.Events> {
     super();
   }
 
-  // 拦截器注册函数
+  // 拦截器
   interceptors: {
-    send: { use: typeof interceptors.send.use };
-    receive: { use: typeof interceptors.send.use };
+    send: Middleware<BLE.Context>;
+    receive: Middleware<BLE.Context>;
   } = {
-    send: {
-      use(cb) {
-        return interceptors.send.use(cb);
-      },
-    },
-    receive: {
-      use(cb) {
-        return interceptors.send.use(cb);
-      },
-    },
+    send: new Middleware<BLE.Context>(),
+    receive: new Middleware<BLE.Context>(),
   };
 
   /* 获取上下文(中间件使用) */
@@ -74,7 +60,7 @@ class BLE extends Event<BLE.Events> {
   > {
     return new Promise((resolve, reject) => {
       wx.openBluetoothAdapter({
-        mode: "central",
+        mode: 'central',
         success: resolve,
         fail: (err) => {
           reject(`初始化失败: 请开启蓝牙后重试; ${err.errCode}:${err.errMsg};`);
@@ -103,7 +89,7 @@ class BLE extends Event<BLE.Events> {
       wx.startBluetoothDevicesDiscovery({
         success: (res) => {
           wx.onBluetoothDeviceFound((res) => {
-            this.emit("device", res.devices);
+            this.emit('device', res.devices);
           });
           resolve(res);
         },
@@ -135,7 +121,25 @@ class BLE extends Event<BLE.Events> {
         success: (res) => {
           if (res.errCode === 0) {
             this.deviceId = deviceId;
-            this.emit("connected", res);
+            this.emit('connected', res);
+            // 监听链接状态变更
+            const handleBLEConnectionStateChange = (
+              res: WechatMiniprogram.OnBLEConnectionStateChangeCallbackResult
+            ) => {
+              this.emit('notify', 'notify', {
+                text: `device ${res.deviceId} state has changed, connected: ${res.connected}`,
+              });
+              if (!res.connected) {
+                this.emit('notify', 'error', {
+                  text: '蓝牙连接已断开，请检查连接状态或重新连接',
+                });
+              }
+            };
+
+            wx.onBLEConnectionStateChange(handleBLEConnectionStateChange);
+            this.once('disConnected', () => {
+              wx.offBLEConnectionStateChange(handleBLEConnectionStateChange);
+            });
             resolve(res);
           }
         },
@@ -154,20 +158,21 @@ class BLE extends Event<BLE.Events> {
         .then((res) => {
           if (res.errCode === 0) {
             resolve(res);
-            this.emit("disConnected", res);
+            // this.emit('disConnected', res);
           }
         })
         .finally(() => {
+          this.emit('disConnected');
           resolve(null);
           // 初始化连接信息
-          this.deviceId = "";
-          this.serviceId = "";
-          this.characteristicId = "";
+          this.deviceId = '';
+          this.serviceId = '';
+          this.characteristicId = '';
           this.properties = [];
           this.services = [];
           this.characteristics = [];
-          this.emit("chr", this.characteristics);
-          this.emit("service", this.services);
+          this.emit('chr', this.characteristics);
+          this.emit('service', this.services);
         });
     });
   }
@@ -178,7 +183,7 @@ class BLE extends Event<BLE.Events> {
       wx.getBLEDeviceServices({
         deviceId,
         success: (res) => {
-          this.emit("service", res.services || []);
+          this.emit('service', res.services || []);
           resolve(res.services || []);
         },
         fail: (err) => {
@@ -196,7 +201,7 @@ class BLE extends Event<BLE.Events> {
         serviceId,
         success: (res) => {
           this.serviceId = serviceId;
-          this.emit("chr", res.characteristics);
+          this.emit('chr', res.characteristics);
           resolve(res.characteristics);
         },
         fail: (err) => {
@@ -216,30 +221,35 @@ class BLE extends Event<BLE.Events> {
   }
 
   /* 写入 */
-  async write({ text, type }: { text: string; type: BLE.Context["type"] }) {
-    const { ab } = await interceptors.send.start(
+  async write({ text, type }: { text: string; type: BLE.Context['type'] }) {
+    const { ab } = await this.interceptors.send.start(
       this.getContext({ text, type })
     );
 
     if (!ab) {
-      this.emit("notify", "error", { text: "写入数据格式错误" });
+      this.emit('notify', 'error', { text: '写入数据格式错误' });
       return Promise.reject();
     }
+
+    console.log(this);
 
     wx.writeBLECharacteristicValue({
       deviceId: this.deviceId,
       serviceId: this.serviceId,
       characteristicId: this.characteristicId,
       value: ab,
-      success: () => {},
+      success: () => {
+        this.emit('notify', 'notify', { text: '写入成功' });
+      },
       fail: (e) => {
-        this.emit("error", e);
-        this.emit("notify", "error", {
-          text: `错误码: ${e.errCode}; 错误信息: ${e.errMsg}`,
+        this.emit('error', e);
+        this.emit('notify', 'error', {
+          text: `写入失败，错误码: ${e.errCode}; 错误信息: ${e.errMsg}`,
         });
       },
     });
   }
+
   /* 读取 */
   read() {
     wx.readBLECharacteristicValue({
@@ -248,21 +258,28 @@ class BLE extends Event<BLE.Events> {
       characteristicId: this.characteristicId,
       success: () => {},
       fail: (e) => {
-        this.emit("error", e);
-        this.emit("notify", "error", {
+        this.emit('error', e);
+        this.emit('notify', 'error', {
           text: `错误码: ${e.errCode}; 错误信息: ${e.errMsg}`,
         });
       },
     });
   }
+
   /* 监听 */
   notify() {
     this.closeNotify();
+    console.log('开启监听');
     wx.onBLECharacteristicValueChange(async (res) => {
-      const { text, hex, type } = await interceptors.receive.start(
+      console.log('特征值变化：', res);
+
+      const ctx = await this.interceptors.receive.start(
         this.getContext({ ab: res.value })
       );
-      this.emit("notify", "notify", { text, hex, type }, res);
+      const { text, hex, type } = ctx;
+      console.log('ctx', ctx);
+
+      this.emit('notify', 'notify', { text, hex, type }, res);
     });
   }
 
@@ -290,8 +307,8 @@ ble.interceptors.send.use((ctx) => {
   let ab: ArrayBuffer | undefined = undefined;
   const { type, text } = ctx;
   if (text) {
-    if (type === "HEX") ab = hexToAb(text);
-    else if (type === "TEXT") ab = strToAb(text);
+    if (type === 'HEX') ab = hexToAb(text);
+    else if (type === 'TEXT') ab = strToAb(text);
   }
   ctx.ab = ab;
 
@@ -300,9 +317,12 @@ ble.interceptors.send.use((ctx) => {
 
 // 注册中间件(响应)
 ble.interceptors.receive.use((ctx) => {
+  console.log('ctx bt middle:', ctx);
   // 类型转换
-  ctx.text = ctx.ab ? abTostr(ctx.ab) : "";
-  ctx.hex = ctx.ab ? abTohex(ctx.ab) : "";
+  ctx.text = ctx.ab ? abTostr(ctx.ab) : '';
+  ctx.hex = ctx.ab ? abTohex(ctx.ab) : '';
+  console.log('ctx bt middle2:', ctx);
+
   return ctx;
 });
 

@@ -1,5 +1,5 @@
-import ble from "~/plugins/BLE/index";
-import Toast from "../../miniprogram_npm/@vant/weapp/toast/toast";
+import ble from '~/plugins/BLE/index';
+import Toast from '../../miniprogram_npm/@vant/weapp/toast/toast';
 
 type List = {
   [key: string]: {
@@ -46,7 +46,7 @@ Page<
   // 查询 service 和 chr
   async query(deviceId) {
     Toast.loading({
-      message: "loading...",
+      message: 'loading...',
       duration: 0,
     });
     const list: List = {};
@@ -86,7 +86,6 @@ Page<
 
   // 跳转界面
   to(e) {
-    console.log(e);
     const { serviceId, characteristicId, properties } =
       e.currentTarget.dataset.info;
     if (!serviceId || !characteristicId || !properties) return;

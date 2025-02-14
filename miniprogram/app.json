@@ -1,9 +1,9 @@
 {
   "pages": [
-    "pages/command/index",
     "pages/index/index",
+    "pages/select/index",
     "pages/devices/index",
-    "pages/select/index"
+    "pages/command/index"
   ],
   "window": {
     "backgroundTextStyle": "light",
