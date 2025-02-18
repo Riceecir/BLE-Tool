@@ -1,31 +1,28 @@
 type Callback<C> = (ctx: C, next: () => void) => C;
 /** 中间件模式
- *
  * @function use 注册中间件
- * @param callback 中间件函数,中间件函数接收下列两个参数：
- * @param callback.ctx 上下文
- * @param callback.next 运行下一个中间件函数
- *
  * @function start 开始运行
- * @param ctx 上下文,默认为空对象
- *
  * @function stop 停止运行
- *
  * @function clear 清除中间件
- * @param idx 中间件索引，如不传则清除所有中间件
  */
 class Middleware<C = {}> {
   private queue: Callback<C>[] = [];
   private prevIndex: number = -1; // -2时会中断中间件执行
   private ctx = {} as C;
 
-  /* 注册 */
+  /** 注册
+   * @param callback 中间件函数,中间件函数接收下列两个参数：
+   * @param callback.ctx 上下文
+   * @param callback.next 运行下一个中间件函数
+   */
   use(cb: Callback<C>) {
     this.queue.push(cb);
     return this;
   }
 
-  /* 开始运行 */
+  /** 开始运行
+   * @param ctx 上下文,默认为空对象
+   */
   start(ctx: C) {
     this.prevIndex = -1;
     this.ctx = ctx;
@@ -61,7 +58,9 @@ class Middleware<C = {}> {
     });
   }
 
-  /* 清空队列 */
+  /** 清空队列
+   * @param idx 中间件索引，如不传则清除所有中间件
+   */
   clear(fn?: Function) {
     if (typeof fn !== "function") {
       console.log("传入参数有误");

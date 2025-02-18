@@ -1,15 +1,14 @@
 import { Event } from "~/plugins/Event/index";
 import { Middleware } from "~/plugins/Middleware/index";
-import { strToAb, hexToAb, abTostr, abTohex } from "~/utils/String";
-
-// 发送和接收拦截器
-const interceptors = {
-  send: new Middleware<BLE.Context>(),
-  receive: new Middleware<BLE.Context>(),
-};
+import { abTohex, abTostr, hexToAb, strToAb } from "~/utils/String";
 
 /* 蓝牙通讯基类，只处理基本的开启、关闭蓝牙，设备搜索，设备连接 */
 class BLE extends Event<BLE.Events> {
+  // 中间件
+  middleware = {
+    send: new Middleware<BLE.Context>(),
+    receive: new Middleware<BLE.Context>(),
+  };
   // 设备ID(connecting)
   protected deviceId: string = "";
   // 服务ID(connecting)
@@ -19,40 +18,13 @@ class BLE extends Event<BLE.Events> {
   // 特征值支持的操作类型
   protected properties: (keyof WechatMiniprogram.BLECharacteristicProperties)[] =
     [];
-
   // 设备、服务、特征值列表
   protected devices: WechatMiniprogram.BlueToothDevice[] = [];
   protected services: WechatMiniprogram.BLEService[] = [];
   protected characteristics: WechatMiniprogram.BLECharacteristic[] = [];
+
   constructor() {
     super();
-  }
-
-  // 拦截器注册函数
-  interceptors: {
-    send: { use: typeof interceptors.send.use };
-    receive: { use: typeof interceptors.send.use };
-  } = {
-    send: {
-      use(cb) {
-        return interceptors.send.use(cb);
-      },
-    },
-    receive: {
-      use(cb) {
-        return interceptors.send.use(cb);
-      },
-    },
-  };
-
-  /* 获取上下文(中间件使用) */
-  protected getContext(mixins: BLE.Context) {
-    return {
-      deviceId: this.deviceId,
-      serviceId: this.serviceId,
-      characteristicId: this.characteristicId,
-      ...mixins,
-    };
   }
 
   /* 初始化蓝牙连接器 */
@@ -66,53 +38,6 @@ class BLE extends Event<BLE.Events> {
     } catch (e) {
       return Promise.reject(e);
     }
-  }
-
-  /* 开启蓝牙 */
-  protected openBluetoothAdapter(): Promise<
-    WechatMiniprogram.BluetoothError | string
-  > {
-    return new Promise((resolve, reject) => {
-      wx.openBluetoothAdapter({
-        mode: "central",
-        success: resolve,
-        fail: (err) => {
-          reject(`初始化失败: 请开启蓝牙后重试; ${err.errCode}:${err.errMsg};`);
-        },
-      });
-    });
-  }
-
-  /* 关闭蓝牙 */
-  protected closeBluetoothAdapter(): Promise<
-    WechatMiniprogram.BluetoothError | string
-  > {
-    return new Promise((resolve, reject) => {
-      wx.closeBluetoothAdapter({
-        success: resolve,
-        fail: (err) => {
-          reject(`关闭蓝牙失败: \n ${err.errCode}:${err.errMsg}`);
-        },
-      });
-    });
-  }
-
-  /* 开始搜索蓝牙设备 */
-  protected startBluetoothDevicesDiscovery(options = {}) {
-    return new Promise((resolve, reject) => {
-      wx.startBluetoothDevicesDiscovery({
-        success: (res) => {
-          wx.onBluetoothDeviceFound((res) => {
-            this.emit("device", res.devices);
-          });
-          resolve(res);
-        },
-        fail: (err) => {
-          reject(`开启搜索设备出错：${err.errCode}:${err.errMsg}`);
-        },
-        ...options,
-      });
-    });
   }
 
   /* 关闭蓝牙设备搜索 */
@@ -217,7 +142,7 @@ class BLE extends Event<BLE.Events> {
 
   /* 写入 */
   async write({ text, type }: { text: string; type: BLE.Context["type"] }) {
-    const { ab } = await interceptors.send.start(
+    const { ab } = await this.middleware.send.start(
       this.getContext({ text, type })
     );
 
@@ -240,6 +165,7 @@ class BLE extends Event<BLE.Events> {
       },
     });
   }
+
   /* 读取 */
   read() {
     wx.readBLECharacteristicValue({
@@ -255,11 +181,12 @@ class BLE extends Event<BLE.Events> {
       },
     });
   }
+
   /* 监听 */
   notify() {
     this.closeNotify();
     wx.onBLECharacteristicValueChange(async (res) => {
-      const { text, hex, type } = await interceptors.receive.start(
+      const { text, hex, type } = await this.middleware.receive.start(
         this.getContext({ ab: res.value })
       );
       this.emit("notify", "notify", { text, hex, type }, res);
@@ -280,12 +207,69 @@ class BLE extends Event<BLE.Events> {
       properties: this.properties,
     };
   }
+
+  /* 获取上下文(中间件使用) */
+  protected getContext(mixins: BLE.Context) {
+    return {
+      deviceId: this.deviceId,
+      serviceId: this.serviceId,
+      characteristicId: this.characteristicId,
+      ...mixins,
+    };
+  }
+
+  /* 开启蓝牙 */
+  protected openBluetoothAdapter(): Promise<
+    WechatMiniprogram.BluetoothError | string
+  > {
+    return new Promise((resolve, reject) => {
+      wx.openBluetoothAdapter({
+        mode: "central",
+        success: resolve,
+        fail: (err) => {
+          reject(`初始化失败: 请开启蓝牙后重试; ${err.errCode}:${err.errMsg};`);
+        },
+      });
+    });
+  }
+
+  /* 关闭蓝牙 */
+  protected closeBluetoothAdapter(): Promise<
+    WechatMiniprogram.BluetoothError | string
+  > {
+    return new Promise((resolve, reject) => {
+      wx.closeBluetoothAdapter({
+        success: resolve,
+        fail: (err) => {
+          reject(`关闭蓝牙失败: \n ${err.errCode}:${err.errMsg}`);
+        },
+      });
+    });
+  }
+
+  /* 开始搜索蓝牙设备 */
+  protected startBluetoothDevicesDiscovery(options = {}) {
+    return new Promise((resolve, reject) => {
+      wx.startBluetoothDevicesDiscovery({
+        success: (res) => {
+          wx.onBluetoothDeviceFound((res) => {
+            this.emit("device", res.devices);
+          });
+          resolve(res);
+        },
+        fail: (err) => {
+          reject(`开启搜索设备出错：${err.errCode}:${err.errMsg}`);
+        },
+        ...options,
+      });
+    });
+  }
 }
 
 const ble = new BLE();
 
 // 注册中间件(写入)
-ble.interceptors.send.use((ctx) => {
+ble.middleware.send.use((ctx) => {
   // 类型转换
   let ab: ArrayBuffer | undefined = undefined;
   const { type, text } = ctx;
@@ -299,7 +283,7 @@ ble.interceptors.send.use((ctx) => {
 });
 
 // 注册中间件(响应)
-ble.interceptors.receive.use((ctx) => {
+ble.middleware.receive.use((ctx) => {
   // 类型转换
   ctx.text = ctx.ab ? abTostr(ctx.ab) : "";
   ctx.hex = ctx.ab ? abTohex(ctx.ab) : "";
