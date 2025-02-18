@@ -1,44 +1,30 @@
-import { Event } from '~/plugins/Event/index';
-import { Middleware } from '~/plugins/Middleware/index';
-import { strToAb, hexToAb, abTostr, abTohex } from '~/utils/String';
+import { Event } from "~/plugins/Event/index";
+import { Middleware } from "~/plugins/Middleware/index";
+import { abTohex, abTostr, hexToAb, strToAb } from "~/utils/String";
 
 /* 蓝牙通讯基类，只处理基本的开启、关闭蓝牙，设备搜索，设备连接 */
 class BLE extends Event<BLE.Events> {
+  // 中间件
+  middleware = {
+    send: new Middleware<BLE.Context>(),
+    receive: new Middleware<BLE.Context>(),
+  };
   // 设备ID(connecting)
-  protected deviceId: string = '';
+  protected deviceId: string = "";
   // 服务ID(connecting)
-  protected serviceId: string = '';
+  protected serviceId: string = "";
   // 特征值ID(connecting)
-  protected characteristicId: string = '';
+  protected characteristicId: string = "";
   // 特征值支持的操作类型
   protected properties: (keyof WechatMiniprogram.BLECharacteristicProperties)[] =
     [];
-
   // 设备、服务、特征值列表
   protected devices: WechatMiniprogram.BlueToothDevice[] = [];
   protected services: WechatMiniprogram.BLEService[] = [];
   protected characteristics: WechatMiniprogram.BLECharacteristic[] = [];
+
   constructor() {
     super();
-  }
-
-  // 拦截器
-  interceptors: {
-    send: Middleware<BLE.Context>;
-    receive: Middleware<BLE.Context>;
-  } = {
-    send: new Middleware<BLE.Context>(),
-    receive: new Middleware<BLE.Context>(),
-  };
-
-  /* 获取上下文(中间件使用) */
-  protected getContext(mixins: BLE.Context) {
-    return {
-      deviceId: this.deviceId,
-      serviceId: this.serviceId,
-      characteristicId: this.characteristicId,
-      ...mixins,
-    };
   }
 
   /* 初始化蓝牙连接器 */
@@ -54,13 +40,191 @@ class BLE extends Event<BLE.Events> {
     }
   }
 
+  /* 关闭蓝牙设备搜索 */
+  stop() {
+    return new Promise((resolve, reject) => {
+      wx.stopBluetoothDevicesDiscovery({
+        success: resolve,
+        fail: (err) => {
+          reject(`停止搜索设备出错: ${err.errCode}:${err.errMsg}`);
+        },
+      });
+    });
+  }
+
+  // 连接设备
+  connect(deviceId: string) {
+    return new Promise(async (resolve, reject) => {
+      wx.createBLEConnection({
+        deviceId,
+        success: (res) => {
+          if (res.errCode === 0) {
+            this.deviceId = deviceId;
+            this.emit("connected", res);
+            resolve(res);
+          }
+        },
+        fail: (err) => {
+          reject(err.errMsg);
+        },
+      });
+    });
+  }
+
+  // 断开连接
+  disconnect(deviceId = this.deviceId) {
+    if (!deviceId) return Promise.resolve();
+    return new Promise((resolve) => {
+      wx.closeBLEConnection({ deviceId })
+        .then((res) => {
+          if (res.errCode === 0) {
+            resolve(res);
+            this.emit("disConnected", res);
+          }
+        })
+        .finally(() => {
+          resolve(null);
+          // 初始化连接信息
+          this.deviceId = "";
+          this.serviceId = "";
+          this.characteristicId = "";
+          this.properties = [];
+          this.services = [];
+          this.characteristics = [];
+          this.emit("chr", this.characteristics);
+          this.emit("service", this.services);
+        });
+    });
+  }
+
+  // 获取所有service
+  getServices(deviceId: string): Promise<WechatMiniprogram.BLEService[]> {
+    return new Promise((resolve, reject) => {
+      wx.getBLEDeviceServices({
+        deviceId,
+        success: (res) => {
+          this.emit("service", res.services || []);
+          resolve(res.services || []);
+        },
+        fail: (err) => {
+          reject(err.errMsg);
+        },
+      });
+    });
+  }
+
+  /* 获取所有特征值  */
+  getChrs(serviceId: string): Promise<WechatMiniprogram.BLECharacteristic[]> {
+    return new Promise((resolve, reject) => {
+      wx.getBLEDeviceCharacteristics({
+        deviceId: this.deviceId,
+        serviceId,
+        success: (res) => {
+          this.serviceId = serviceId;
+          this.emit("chr", res.characteristics);
+          resolve(res.characteristics);
+        },
+        fail: (err) => {
+          reject(err.errMsg);
+        },
+      });
+    });
+  }
+
+  /* 设置特征值 */
+  setChrs(
+    characteristicId: string,
+    properties: (keyof WechatMiniprogram.BLECharacteristicProperties)[]
+  ) {
+    this.characteristicId = characteristicId;
+    this.properties = properties;
+  }
+
+  /* 写入 */
+  async write({ text, type }: { text: string; type: BLE.Context["type"] }) {
+    const { ab } = await this.middleware.send.start(
+      this.getContext({ text, type })
+    );
+
+    if (!ab) {
+      this.emit("notify", "error", { text: "写入数据格式错误" });
+      return Promise.reject();
+    }
+
+    wx.writeBLECharacteristicValue({
+      deviceId: this.deviceId,
+      serviceId: this.serviceId,
+      characteristicId: this.characteristicId,
+      value: ab,
+      success: () => {},
+      fail: (e) => {
+        this.emit("error", e);
+        this.emit("notify", "error", {
+          text: `错误码: ${e.errCode}; 错误信息: ${e.errMsg}`,
+        });
+      },
+    });
+  }
+
+  /* 读取 */
+  read() {
+    wx.readBLECharacteristicValue({
+      deviceId: this.deviceId,
+      serviceId: this.serviceId,
+      characteristicId: this.characteristicId,
+      success: () => {},
+      fail: (e) => {
+        this.emit("error", e);
+        this.emit("notify", "error", {
+          text: `错误码: ${e.errCode}; 错误信息: ${e.errMsg}`,
+        });
+      },
+    });
+  }
+
+  /* 监听 */
+  notify() {
+    this.closeNotify();
+    wx.onBLECharacteristicValueChange(async (res) => {
+      const { text, hex, type } = await this.middleware.receive.start(
+        this.getContext({ ab: res.value })
+      );
+      this.emit("notify", "notify", { text, hex, type }, res);
+    });
+  }
+
+  // 关闭监听notify
+  closeNotify() {
+    wx.offBLECharacteristicValueChange(() => {});
+  }
+
+  // 获取连接信息
+  getConnection() {
+    return {
+      deviceId: this.deviceId,
+      serviceId: this.serviceId,
+      characteristicId: this.characteristicId,
+      properties: this.properties,
+    };
+  }
+
+  /* 获取上下文(中间件使用) */
+  protected getContext(mixins: BLE.Context) {
+    return {
+      deviceId: this.deviceId,
+      serviceId: this.serviceId,
+      characteristicId: this.characteristicId,
+      ...mixins,
+    };
+  }
+
   /* 开启蓝牙 */
   protected openBluetoothAdapter(): Promise<
     WechatMiniprogram.BluetoothError | string
   > {
     return new Promise((resolve, reject) => {
       wx.openBluetoothAdapter({
-        mode: 'central',
+        mode: "central",
         success: resolve,
         fail: (err) => {
           reject(`初始化失败: 请开启蓝牙后重试; ${err.errCode}:${err.errMsg};`);
@@ -89,7 +253,7 @@ class BLE extends Event<BLE.Events> {
       wx.startBluetoothDevicesDiscovery({
         success: (res) => {
           wx.onBluetoothDeviceFound((res) => {
-            this.emit('device', res.devices);
+            this.emit("device", res.devices);
           });
           resolve(res);
         },
@@ -100,215 +264,18 @@ class BLE extends Event<BLE.Events> {
       });
     });
   }
-
-  /* 关闭蓝牙设备搜索 */
-  stop() {
-    return new Promise((resolve, reject) => {
-      wx.stopBluetoothDevicesDiscovery({
-        success: resolve,
-        fail: (err) => {
-          reject(`停止搜索设备出错: ${err.errCode}:${err.errMsg}`);
-        },
-      });
-    });
-  }
-
-  // 连接设备
-  connect(deviceId: string) {
-    return new Promise(async (resolve, reject) => {
-      wx.createBLEConnection({
-        deviceId,
-        success: (res) => {
-          if (res.errCode === 0) {
-            this.deviceId = deviceId;
-            this.emit('connected', res);
-            // 监听链接状态变更
-            const handleBLEConnectionStateChange = (
-              res: WechatMiniprogram.OnBLEConnectionStateChangeCallbackResult
-            ) => {
-              this.emit('notify', 'notify', {
-                text: `device ${res.deviceId} state has changed, connected: ${res.connected}`,
-              });
-              if (!res.connected) {
-                this.emit('notify', 'error', {
-                  text: '蓝牙连接已断开，请检查连接状态或重新连接',
-                });
-              }
-            };
-
-            wx.onBLEConnectionStateChange(handleBLEConnectionStateChange);
-            this.once('disConnected', () => {
-              wx.offBLEConnectionStateChange(handleBLEConnectionStateChange);
-            });
-            resolve(res);
-          }
-        },
-        fail: (err) => {
-          reject(err.errMsg);
-        },
-      });
-    });
-  }
-
-  // 断开连接
-  disconnect(deviceId = this.deviceId) {
-    if (!deviceId) return Promise.resolve();
-    return new Promise((resolve) => {
-      wx.closeBLEConnection({ deviceId })
-        .then((res) => {
-          if (res.errCode === 0) {
-            resolve(res);
-            // this.emit('disConnected', res);
-          }
-        })
-        .finally(() => {
-          this.emit('disConnected');
-          resolve(null);
-          // 初始化连接信息
-          this.deviceId = '';
-          this.serviceId = '';
-          this.characteristicId = '';
-          this.properties = [];
-          this.services = [];
-          this.characteristics = [];
-          this.emit('chr', this.characteristics);
-          this.emit('service', this.services);
-        });
-    });
-  }
-
-  // 获取所有service
-  getServices(deviceId: string): Promise<WechatMiniprogram.BLEService[]> {
-    return new Promise((resolve, reject) => {
-      wx.getBLEDeviceServices({
-        deviceId,
-        success: (res) => {
-          this.emit('service', res.services || []);
-          resolve(res.services || []);
-        },
-        fail: (err) => {
-          reject(err.errMsg);
-        },
-      });
-    });
-  }
-
-  /* 获取所有特征值  */
-  getChrs(serviceId: string): Promise<WechatMiniprogram.BLECharacteristic[]> {
-    return new Promise((resolve, reject) => {
-      wx.getBLEDeviceCharacteristics({
-        deviceId: this.deviceId,
-        serviceId,
-        success: (res) => {
-          this.serviceId = serviceId;
-          this.emit('chr', res.characteristics);
-          resolve(res.characteristics);
-        },
-        fail: (err) => {
-          reject(err.errMsg);
-        },
-      });
-    });
-  }
-
-  /* 设置特征值 */
-  setChrs(
-    characteristicId: string,
-    properties: (keyof WechatMiniprogram.BLECharacteristicProperties)[]
-  ) {
-    this.characteristicId = characteristicId;
-    this.properties = properties;
-  }
-
-  /* 写入 */
-  async write({ text, type }: { text: string; type: BLE.Context['type'] }) {
-    const { ab } = await this.interceptors.send.start(
-      this.getContext({ text, type })
-    );
-
-    if (!ab) {
-      this.emit('notify', 'error', { text: '写入数据格式错误' });
-      return Promise.reject();
-    }
-
-    console.log(this);
-
-    wx.writeBLECharacteristicValue({
-      deviceId: this.deviceId,
-      serviceId: this.serviceId,
-      characteristicId: this.characteristicId,
-      value: ab,
-      success: () => {
-        this.emit('notify', 'notify', { text: '写入成功' });
-      },
-      fail: (e) => {
-        this.emit('error', e);
-        this.emit('notify', 'error', {
-          text: `写入失败，错误码: ${e.errCode}; 错误信息: ${e.errMsg}`,
-        });
-      },
-    });
-  }
-
-  /* 读取 */
-  read() {
-    wx.readBLECharacteristicValue({
-      deviceId: this.deviceId,
-      serviceId: this.serviceId,
-      characteristicId: this.characteristicId,
-      success: () => {},
-      fail: (e) => {
-        this.emit('error', e);
-        this.emit('notify', 'error', {
-          text: `错误码: ${e.errCode}; 错误信息: ${e.errMsg}`,
-        });
-      },
-    });
-  }
-
-  /* 监听 */
-  notify() {
-    this.closeNotify();
-    console.log('开启监听');
-    wx.onBLECharacteristicValueChange(async (res) => {
-      console.log('特征值变化：', res);
-
-      const ctx = await this.interceptors.receive.start(
-        this.getContext({ ab: res.value })
-      );
-      const { text, hex, type } = ctx;
-      console.log('ctx', ctx);
-
-      this.emit('notify', 'notify', { text, hex, type }, res);
-    });
-  }
-
-  // 关闭监听notify
-  closeNotify() {
-    wx.offBLECharacteristicValueChange(() => {});
-  }
-
-  // 获取连接信息
-  getConnection() {
-    return {
-      deviceId: this.deviceId,
-      serviceId: this.serviceId,
-      characteristicId: this.characteristicId,
-      properties: this.properties,
-    };
-  }
 }
 
 const ble = new BLE();
 
 // 注册中间件(写入)
-ble.interceptors.send.use((ctx) => {
+ble.middleware.send.use((ctx) => {
   // 类型转换
   let ab: ArrayBuffer | undefined = undefined;
   const { type, text } = ctx;
   if (text) {
-    if (type === 'HEX') ab = hexToAb(text);
-    else if (type === 'TEXT') ab = strToAb(text);
+    if (type === "HEX") ab = hexToAb(text);
+    else if (type === "TEXT") ab = strToAb(text);
   }
   ctx.ab = ab;
 
@@ -316,13 +283,10 @@ ble.interceptors.send.use((ctx) => {
 });
 
 // 注册中间件(响应)
-ble.interceptors.receive.use((ctx) => {
-  console.log('ctx bt middle:', ctx);
+ble.middleware.receive.use((ctx) => {
   // 类型转换
-  ctx.text = ctx.ab ? abTostr(ctx.ab) : '';
-  ctx.hex = ctx.ab ? abTohex(ctx.ab) : '';
-  console.log('ctx bt middle2:', ctx);
-
+  ctx.text = ctx.ab ? abTostr(ctx.ab) : "";
+  ctx.hex = ctx.ab ? abTohex(ctx.ab) : "";
   return ctx;
 });
 
