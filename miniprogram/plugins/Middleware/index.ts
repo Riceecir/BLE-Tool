@@ -1,4 +1,4 @@
-type Callback<C> = (ctx: C, next: () => void) => C;
+type Callback<C> = (ctx: C, next: () => void) => Promise<C | void> | (C | void);
 /** 中间件模式
  * @function use 注册中间件
  * @function start 开始运行
@@ -38,21 +38,20 @@ class Middleware<C = {}> {
   private runner(idx: number): Promise<C> {
     return new Promise(async (resolve, reject) => {
       if (this.prevIndex === -2) return resolve(this.ctx);
-      if (this.prevIndex === idx) throw new Error("不可以重复调用next!");
+      if (this.prevIndex === idx) throw new Error('不可以重复调用next!');
 
       const middleware = this.queue[idx];
       if (!middleware) return resolve(this.ctx);
-      if (typeof middleware !== "function") throw new Error("请传入Function");
+      if (typeof middleware !== 'function') throw new Error('请传入Function');
       try {
         this.prevIndex = idx;
-        const result = await middleware(this.ctx, async () => {
-          if (result === undefined) await this.runner(this.prevIndex + 1);
-          resolve(this.ctx);
+        await middleware(this.ctx, async () => {
+          await this.runner(this.prevIndex + 1);
         });
 
-        if (result !== undefined) resolve(result);
+        resolve(this.ctx);
       } catch (e) {
-        console.log("执行中断: ", e || "抛出错误");
+        console.log('执行中断: ', e || '抛出错误');
         reject(e);
       }
     });
@@ -62,8 +61,8 @@ class Middleware<C = {}> {
    * @param idx 中间件索引，如不传则清除所有中间件
    */
   clear(fn?: Function) {
-    if (typeof fn !== "function") {
-      console.log("传入参数有误");
+    if (typeof fn !== 'function') {
+      console.log('传入参数有误');
     } else {
       const idx = this.queue.findIndex((i) => i === fn);
       if (idx !== -1) this.queue.splice(0, idx);
@@ -74,3 +73,34 @@ class Middleware<C = {}> {
 
 export { Middleware };
 export default new Middleware();
+
+/* const sleep = (times = 0) => {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(1), times);
+  });
+};
+const middleware = new Middleware<{ no: number }>();
+
+middleware
+  .use(async (ctx, next) => {
+    ctx.no += 1;
+    console.log(1);
+    await next();
+    console.log(2);
+  })
+  .use(async (ctx, next) => {
+    ctx.no += 1;
+    await sleep(300);
+    console.log(3);
+    next();
+    console.log(4);
+  })
+  .use((ctx) => {
+    ctx.no += 1;
+    console.log(5);
+  });
+
+middleware.start({ no: 0 }).then((ctx) => {
+  console.log('no: ', ctx.no);
+});
+ */
