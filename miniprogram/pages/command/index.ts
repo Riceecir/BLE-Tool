@@ -17,6 +17,7 @@ Page<
   {
     onInput(e: WechatMiniprogram.Input): void;
     onChange(e: WechatMiniprogram.PickerChange): void;
+    onDisconnected(): void;
     onNotify: BLE.Events['notify'];
     addRecord(type: 'write' | 'notify' | 'error', text: string): void;
     listen(): void;
@@ -65,14 +66,17 @@ Page<
 
   // 监听广播数据等事件
   listen() {
-    ble.once('disConnected', () => {
-      wx.showModal({
-        content: '蓝牙连接已断开',
-        showCancel: false,
-      });
-    });
+    ble.once('disConnected', this.onDisconnected);
     ble.on('notify', this.onNotify);
     ble.notify();
+  },
+
+  // 蓝牙断开
+  onDisconnected() {
+    wx.showModal({
+      content: '蓝牙连接已断开',
+      showCancel: false,
+    });
   },
 
   // 添加记录
@@ -127,5 +131,6 @@ Page<
    */
   onUnload() {
     ble.remove('notify', this.onNotify);
+    ble.remove('disConnected', this.onDisconnected);
   },
 });

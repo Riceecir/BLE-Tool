@@ -62,7 +62,7 @@ class Event<T = {}> {
     if (!name || !cb) return;
 
     for (let list of [this.events[name], this.onceEvents[name]]) {
-      if (!list) break;
+      if (!list) continue;
       const idx = list.findIndex(({ callback }) => callback === cb);
       if (idx !== -1) {
         list.splice(idx, 1);
