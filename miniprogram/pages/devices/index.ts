@@ -54,6 +54,7 @@ Page<
     getDevices: (res: BLE.BlueToothDevices) => void;
     start: () => void;
     stop: () => void;
+    open: () => void;
     connect: (
       event: WechatMiniprogram.BaseEvent<{}, { deviceid: string }>
     ) => void;
@@ -88,6 +89,10 @@ Page<
 
   onHide() {
     this.stop();
+  },
+
+  open() {
+    wx.openSystemBluetoothSetting({});
   },
 
   // 启动！
