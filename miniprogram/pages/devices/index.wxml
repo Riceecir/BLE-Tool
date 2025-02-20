@@ -13,7 +13,7 @@
 				bind:click="connect"
 			>
 				<view slot="label" class="info">
-					<text>{{ item.deviceId }}</text>
+					<text>Device ID: {{ item.deviceId }}</text>
 					<text>RSSI: {{ item.RSSI }}</text>
 				</view>
 			</van-cell>

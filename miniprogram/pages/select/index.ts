@@ -1,5 +1,5 @@
-import ble from '~/plugins/BLE/index';
-import Toast from '../../miniprogram_npm/@vant/weapp/toast/toast';
+import ble from "~/plugins/BLE/index";
+import Toast from "../../miniprogram_npm/@vant/weapp/toast/toast";
 
 type List = {
   [key: string]: {
@@ -40,13 +40,16 @@ Page<
    * 生命周期函数--监听页面加载
    */
   onLoad(e: { deviceId: string; name: string }) {
+    wx.setNavigationBarTitle({
+      title: e.name || "BLE Tool",
+    });
     this.query(e.deviceId);
   },
 
   // 查询 service 和 chr
   async query(deviceId) {
     Toast.loading({
-      message: 'loading...',
+      message: "loading...",
       duration: 0,
     });
     const list: List = {};

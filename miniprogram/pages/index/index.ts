@@ -34,7 +34,7 @@ Page({
   toMain() {
     this.authorize(() => {
       wx.navigateTo({
-        url: '/pages/devices/index',
+        url: "/pages/devices/index",
       });
     });
   },

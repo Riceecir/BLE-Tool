@@ -184,18 +184,13 @@ class BLE extends Event<BLE.Events> {
 
   /* 监听 */
   notify() {
-    this.closeNotify();
+    wx.offBLECharacteristicValueChange();
     wx.onBLECharacteristicValueChange(async (res) => {
       const { text, hex, type } = await this.middleware.receive.start(
         this.getContext({ ab: res.value })
       );
       this.emit("notify", "notify", { text, hex, type }, res);
     });
-  }
-
-  // 关闭监听notify
-  closeNotify() {
-    wx.offBLECharacteristicValueChange(() => {});
   }
 
   // 获取连接信息

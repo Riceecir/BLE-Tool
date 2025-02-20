@@ -101,7 +101,7 @@ Page<
       message: "loading...",
       duration: 0,
     });
-    ble.remove("device", this.getDevices);
+    this.stop();
     ble.on("device", this.getDevices);
     this.setData({ reInit: false });
     try {
