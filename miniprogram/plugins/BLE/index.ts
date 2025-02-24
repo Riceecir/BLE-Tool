@@ -120,7 +120,6 @@ class BLE extends Event<BLE.Events> {
         deviceId: this.deviceId,
         serviceId,
         success: (res) => {
-          this.serviceId = serviceId;
           this.emit("chr", res.characteristics);
           resolve(res.characteristics);
         },
@@ -133,9 +132,11 @@ class BLE extends Event<BLE.Events> {
 
   /* 设置特征值 */
   setChrs(
+    serviceId: string,
     characteristicId: string,
     properties: (keyof WechatMiniprogram.BLECharacteristicProperties)[]
   ) {
+    this.serviceId = serviceId;
     this.characteristicId = characteristicId;
     this.properties = properties;
   }

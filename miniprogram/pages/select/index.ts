@@ -93,7 +93,7 @@ Page<
       e.currentTarget.dataset.info;
     if (!serviceId || !characteristicId || !properties) return;
 
-    ble.setChrs(characteristicId, properties);
+    ble.setChrs(serviceId, characteristicId, properties);
     wx.navigateTo({
       url: `/pages/command/index`,
     });
