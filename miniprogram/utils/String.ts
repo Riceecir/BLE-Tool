@@ -1,3 +1,4 @@
+import TextEncoderLib from "./encoding/encoding";
 // ArrayBuffer转16进度字符串示例
 export const abTohex = (buffer: ArrayBuffer) => {
   var hexArr = Array.prototype.map.call(new Uint8Array(buffer), function (bit) {
@@ -16,7 +17,11 @@ export const abTostr = (buffer: ArrayBuffer) => {
 export const strToHex = (str: string): string[] => {
   if (!str || str.toString() === "") return [];
 
-  return str.split("").map((s) => s.charCodeAt(0).toString(16));
+  const encoder = new TextEncoderLib.TextEncoder();
+  const bytes = encoder.encode(str);
+  return Array.from(bytes, (byte) =>
+    (byte as any).toString(16).padStart(2, "0")
+  );
 };
 
 /* 字符串转ArrayBuffer */
