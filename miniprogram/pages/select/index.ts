@@ -83,8 +83,8 @@ Page<
       });
     } catch (e) {
     } finally {
-      Toast.clear();
     }
+    Toast.clear();
   },
 
   // 跳转界面

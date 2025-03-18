@@ -105,6 +105,7 @@ Page<
     ble.on("device", this.getDevices);
     this.setData({ reInit: false });
     try {
+      this.data.devices = [];
       await ble.start();
       Toast.clear();
     } catch (e) {
@@ -143,7 +144,6 @@ Page<
 
   // 连接设备
   connect(e: WechatMiniprogram.BaseEvent) {
-    console.log(e);
     if (this.data.isConnecting) return;
     this.data.isConnecting = true;
     Toast.loading({

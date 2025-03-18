@@ -115,7 +115,7 @@ Page<
     this.setData({ properties });
     this.listen();
 
-    if (wx.getAccountInfoSync().miniProgram.envVersion !== "release") {
+    /* if (wx.getAccountInfoSync().miniProgram.envVersion !== "release") {
       this.addRecord("error", "错误数据测试");
       this.addRecord("write", "写入数据测试");
       this.addRecord(
@@ -124,7 +124,7 @@ Page<
       );
       this.addRecord("notify", "TESTDATA");
       this.addRecord("notify", `HEX: ${strToHex("TESTDATA").join(" ")}`);
-    }
+    } */
   },
 
   /**

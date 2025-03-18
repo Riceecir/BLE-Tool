@@ -192,6 +192,12 @@ class BLE extends Event<BLE.Events> {
       );
       this.emit("notify", "notify", { text, hex, type }, res);
     });
+    wx.notifyBLECharacteristicValueChange({
+      state: true,
+      deviceId: this.deviceId,
+      serviceId: this.serviceId,
+      characteristicId: this.characteristicId,
+    });
   }
 
   // 获取连接信息
@@ -247,6 +253,7 @@ class BLE extends Event<BLE.Events> {
   protected startBluetoothDevicesDiscovery(options = {}) {
     return new Promise((resolve, reject) => {
       wx.startBluetoothDevicesDiscovery({
+        allowDuplicatesKey: true,
         success: (res) => {
           wx.onBluetoothDeviceFound((res) => {
             this.emit("device", res.devices);
