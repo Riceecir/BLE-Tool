@@ -1,4 +1,4 @@
-import { Names, EventCollect, CustomParameters } from './type';
+import { Names, EventCollect, CustomParameters } from "./type";
 
 /** 事件处理(发布订阅模式)
  * 实例化对象时，事件名称以及事件处理回调函数类型可以以键值对方式传入泛型
@@ -42,7 +42,7 @@ class Event<T = {}> {
     for (const list of [this.events[name], this.onceEvents[name]]) {
       list?.forEach((i) => {
         try {
-          typeof i.callback === 'function' && i.callback(...prop);
+          typeof i.callback === "function" && i.callback(...prop);
         } catch (e) {
           console.error(`事件处理出错${e}`);
         }

@@ -112,6 +112,7 @@ Page<
       this.setData({ reInit: true });
       Toast({ message: e as string, duration: 3000 });
     } finally {
+      Toast.clear();
       this.setData({ initializing: false });
     }
   },
