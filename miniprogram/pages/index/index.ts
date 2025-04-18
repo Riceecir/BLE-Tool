@@ -32,6 +32,7 @@ Page({
   },
 
   toMain() {
+    console.log('toMain')
     this.authorize(() => {
       wx.navigateTo({
         url: "/pages/devices/index",
