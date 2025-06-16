@@ -107,13 +107,12 @@ Page<
     try {
       this.data.devices = [];
       await ble.start();
-      Toast.clear();
     } catch (e) {
       this.setData({ reInit: true });
       Toast({ message: e as string, duration: 3000 });
     } finally {
-      Toast.clear();
       this.setData({ initializing: false });
+      Toast.clear();
     }
   },
 

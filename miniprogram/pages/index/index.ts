@@ -22,17 +22,29 @@ Page({
 
   /* 授权 */
   authorize(cb: () => void) {
-    wx.authorize({
-      scope: "scope.bluetooth",
+    wx.getSetting({
       success: (res) => {
         console.log(res);
-        cb();
+        if (res.authSetting["scope.bluetooth"]) {
+          cb();
+        } else {
+          wx.authorize({
+            scope: "scope.bluetooth",
+            success: (res) => {
+              console.log(res);
+              cb();
+            },
+            fail: (err) => {
+              console.log(err);
+            },
+          });
+        }
       },
     });
   },
 
   toMain() {
-    console.log('toMain')
+    console.log("toMain");
     this.authorize(() => {
       wx.navigateTo({
         url: "/pages/devices/index",

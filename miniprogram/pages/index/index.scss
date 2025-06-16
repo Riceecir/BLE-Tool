@@ -1,16 +1,5 @@
-/**index.wxss**/
-.staff-entry {
-  position: fixed;
-  bottom: 0;
-  z-index: 1;
-
-  width: 128rpx;
-  height: 128rpx;
-  // background-color: white;
-  opacity: 0;
-}
-
 .container {
+  position: relative;
   align-items: center;
   justify-content: center;
   color: white;
