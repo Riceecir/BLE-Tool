@@ -1,6 +1,6 @@
 import { Event } from "~/plugins/Event/index";
 import { Middleware } from "~/plugins/Middleware/index";
-import { abTohex, abTostr, hexToAb, strToAb } from "~/utils/String";
+import { abTohex, abToStr, hexToAb, strToAb } from "~/utils/String";
 
 /* 蓝牙通讯基类，只处理基本的开启、关闭蓝牙，设备搜索，设备连接 */
 class BLE extends Event<BLE.Events> {
@@ -288,7 +288,7 @@ ble.middleware.send.use((ctx) => {
 // 注册中间件(响应)
 ble.middleware.receive.use((ctx) => {
   // 类型转换
-  ctx.text = ctx.ab ? abTostr(ctx.ab) : "";
+  ctx.text = ctx.ab ? abToStr(ctx.ab) : "";
   ctx.hex = ctx.ab ? abTohex(ctx.ab) : "";
   return ctx;
 });

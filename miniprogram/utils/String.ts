@@ -8,7 +8,9 @@ export const abTohex = (buffer: ArrayBuffer) => {
 };
 
 /* ArrayBuffer转字符串 */
-export const abTostr = (buffer: ArrayBuffer) => {
+export const abToStr = (buffer: ArrayBuffer) => {
+  const decoder = new TextEncoderLib.TextDecoder();
+  return decoder.decode(buffer);
   const view = new Uint8Array(buffer);
   return String.fromCharCode.apply(null, view as any);
 };
@@ -40,16 +42,13 @@ export const hexToAb = (str: string): ArrayBuffer => {
 };
 
 /* 十六进制(unicode)转字符串 */
-export const hexToStr = (hex: string) => {
-  let arr = hex.split("");
-  let out = "";
-  for (let i = 0; i < arr.length / 2; i++) {
-    let charValue = String.fromCharCode(
-      parseInt(arr[i * 2] + arr[i * 2 + 1], 16)
-    );
-    out += charValue;
-  }
-  return out;
+export const hexToStr = (hex: string | ArrayBuffer): string => {
+  const decoder = new TextEncoderLib.TextDecoder();
+
+  if (typeof hex === "string") return decoder.decode(hexToAb(hex));
+  else if (hex instanceof ArrayBuffer) return decoder.decode(hex);
+
+  return "";
 };
 
 /* ab 转 ascii */
