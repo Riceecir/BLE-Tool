@@ -11,8 +11,6 @@ export const abTohex = (buffer: ArrayBuffer) => {
 export const abToStr = (buffer: ArrayBuffer) => {
   const decoder = new TextEncoderLib.TextDecoder();
   return decoder.decode(buffer);
-  const view = new Uint8Array(buffer);
-  return String.fromCharCode.apply(null, view as any);
 };
 
 /* 字符串转16进制unicode */

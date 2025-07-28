@@ -55,6 +55,7 @@ Page<
     const list: List = {};
     try {
       const services = await ble.getServices(deviceId);
+      Toast.clear();
 
       services.forEach(({ uuid }) => {
         if (!list[uuid]) list[uuid] = [];
@@ -83,7 +84,6 @@ Page<
       });
     } catch (e) {
     } finally {
-      Toast.clear();
     }
   },
 
